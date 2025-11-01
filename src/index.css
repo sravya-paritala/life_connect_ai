@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MediMithraAI Design System - Unique Healthcare Theme
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Main brand colors - Deep medical teal theme */
+    --primary: 180 47% 34%;           /* Deep teal */
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 180 60% 45%;      /* Brighter teal for accents */
+    
+    /* Secondary - Warm coral for CTAs and highlights */
+    --secondary: 12 100% 70%;         /* Warm coral */
+    --secondary-foreground: 0 0% 98%;
+    --secondary-soft: 12 60% 85%;     /* Soft coral for backgrounds */
+    
+    /* Accent - Soft mint for success states */
+    --accent: 150 50% 76%;            /* Soft mint */
+    --accent-foreground: 180 47% 20%;
+    --accent-dark: 150 40% 60%;       /* Darker mint */
+    
+    /* Neutral backgrounds */
+    --background: 210 20% 98%;        /* Warm white */
+    --foreground: 180 20% 15%;        /* Dark teal gray */
+    
+    --card: 0 0% 100%;
+    --card-foreground: 180 20% 15%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 180 20% 15%;
+    
+    /* Supporting colors */
+    --muted: 180 15% 94%;             /* Light teal gray */
+    --muted-foreground: 180 10% 45%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 180 20% 90%;
+    --input: 180 20% 90%;
+    --ring: 180 47% 34%;
+    
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--background)), hsl(var(--muted)));
+    
+    /* Shadows with brand colors */
+    --shadow-primary: 0 10px 25px -5px hsl(var(--primary) / 0.2);
+    --shadow-card: 0 4px 20px -4px hsl(var(--primary) / 0.1);
+    --shadow-glow: 0 0 30px hsl(var(--primary-glow) / 0.3);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Main brand colors - adjusted for dark mode */
+    --primary: 180 60% 45%;           /* Brighter teal for dark mode */
+    --primary-foreground: 180 47% 15%;
+    --primary-glow: 180 70% 55%;      /* Even brighter for accents */
+    
+    /* Secondary - warm coral adjusted */
+    --secondary: 12 85% 65%;          /* Slightly muted coral */
+    --secondary-foreground: 0 0% 98%;
+    --secondary-soft: 12 45% 25%;     /* Dark coral background */
+    
+    /* Accent - mint green adjusted */
+    --accent: 150 40% 60%;            /* Darker mint for contrast */
+    --accent-foreground: 0 0% 98%;
+    --accent-dark: 150 30% 45%;       /* Even darker mint */
+    
+    /* Dark backgrounds */
+    --background: 180 20% 8%;         /* Very dark teal background */
+    --foreground: 180 10% 95%;        /* Light teal text */
+    
+    --card: 180 15% 12%;              /* Dark card background */
+    --card-foreground: 180 10% 95%;
+    
+    --popover: 180 15% 12%;
+    --popover-foreground: 180 10% 95%;
+    
+    /* Supporting colors for dark mode */
+    --muted: 180 10% 20%;             /* Dark muted background */
+    --muted-foreground: 180 5% 70%;   /* Medium contrast text */
+    
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 180 15% 25%;            /* Dark borders */
+    --input: 180 15% 25%;
+    --ring: 180 60% 45%;              /* Bright ring color */
+    
+    /* Custom gradients for dark mode */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--muted)));
+    
+    /* Shadows adjusted for dark mode */
+    --shadow-primary: 0 10px 25px -5px hsl(var(--primary) / 0.3);
+    --shadow-card: 0 4px 20px -4px hsl(var(--primary) / 0.15);
+    --shadow-glow: 0 0 30px hsl(var(--primary-glow) / 0.4);
+    
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
