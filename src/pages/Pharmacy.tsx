@@ -110,7 +110,7 @@ export default function Pharmacy() {
           </div>
         </div>
 
-
+       
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
 import Home from "./pages/Home";
 import ReportSummariser from "./pages/ReportSummariser";
@@ -12,6 +12,8 @@ import Profile from "./pages/Profile";
 import Pharmacy from "./pages/Pharmacy";
 import HealthLibrary from "./pages/HealthLibrary";
 import NotFound from "./pages/NotFound";
+import OCRUpload from "./components/layout/OCRUpload";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +24,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <MainLayout>
+          
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/report-summariser" element={<ReportSummariser />} />
@@ -30,7 +33,8 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/pharmacy" element={<Pharmacy />} />
             <Route path="/health-library" element={<HealthLibrary />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            
+            {/* Add all custom routes above the catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </MainLayout>
@@ -38,5 +42,23 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
-
+const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <App />,
+      children: [
+        { path: "/", element: <Home /> },
+        { path: "/profile", element: <Profile /> },
+        { path: "/emergency", element: <Emergency /> },
+      ],
+    },
+  ],
+  {
+    future: {
+      v7_startTransition: true,
+      v7_relativeSplatPath: true,
+    },
+  }
+);
 export default App;

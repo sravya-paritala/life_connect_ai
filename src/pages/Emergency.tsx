@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +11,47 @@ import { Label } from '@/components/ui/label';
 import { Phone, Users, UserCheck, Volume2, AlertTriangle, VolumeX, MapPin, Download, Send, Search } from 'lucide-react';
 import ShareButton from '@/components/ui/ShareButton';
 import { toast } from '@/hooks/use-toast';
+
+/**
+ * Local types for Web Speech API to avoid using `any` and satisfy ESLint
+ * These mimic the minimal parts we use.
+ */
+declare global {
+  interface Window {
+    webkitSpeechRecognition?: {
+      new (): SpeechRecognitionDef;
+    };
+    SpeechRecognition?: {
+      new (): SpeechRecognitionDef;
+    };
+  }
+}
+
+interface SpeechRecognitionResultItem {
+  0: { transcript: string };
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResultItem;
+  length: number;
+}
+
+interface SpeechRecognitionEventDef {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionDef {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives?: number;
+  onresult?: ((e: SpeechRecognitionEventDef) => void) | null;
+  onerror?: ((e: unknown) => void) | null;
+  onend?: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort?: () => void;
+}
 
 type UserType = 'general' | 'hospital' | null;
 type QuestionnaireState = 'selection' | 'questions' | 'summary';
@@ -22,69 +65,69 @@ interface Question {
 
 const questions: Record<'general' | 'hospital', Question[]> = {
   general: [
-    { 
+    {
       text: "What is the emergency? (Describe briefly)",
       type: "radio",
       options: ["Accident", "Unconscious person", "Chest pain", "Fire", "Fall", "Other"]
     },
-    { 
+    {
       text: "Is the person conscious and responsive?",
       type: "radio",
       options: ["Yes - awake and responding", "No - unconscious", "Semi-conscious / confused"]
     },
-    { 
+    {
       text: "Is the person breathing normally?",
       type: "radio",
       options: ["Yes", "No / struggling to breathe", "Gasping / abnormal breathing"]
     },
-    { 
+    {
       text: "Are there visible injuries or bleeding?",
       type: "radio",
       options: ["Severe bleeding", "Minor bleeding", "Broken bone suspected", "Burns", "No visible injuries"]
     }
   ],
   hospital: [
-    { 
+    {
       text: "Primary complaint / reason for emergency",
       type: "radio",
       options: ["Skip", "Chest pain", "Dyspnea", "Trauma", "Seizure", "Altered consciousness", "Other"]
     },
-    { 
+    {
       text: "Time of onset / when symptoms started",
       type: "text",
       options: ["Skip"]
     },
-    { 
+    {
       text: "Patient's level of consciousness (AVPU)",
       type: "radio",
       options: ["Skip", "A - Alert", "V - Responds to voice", "P - Responds to pain", "U - Unresponsive"]
     },
-    { 
+    {
       text: "Vital signs (if available) - Heart rate",
       type: "text",
       options: ["Skip"]
     },
-    { 
+    {
       text: "Vital signs - Blood pressure",
       type: "text",
       options: ["Skip"]
     },
-    { 
+    {
       text: "Current breathing status",
       type: "radio",
       options: ["Skip", "Normal", "Respiratory distress", "Cyanosis", "Wheezing / crackles", "Not breathing / cardiac arrest"]
     },
-    { 
+    {
       text: "History of present illness (brief summary)",
       type: "text",
       options: ["Skip"]
     },
-    { 
+    {
       text: "Past medical history",
       type: "radio",
       options: ["Skip", "Diabetes", "Hypertension", "Cardiac disease", "Stroke", "Asthma/COPD", "None", "Other"]
     },
-    { 
+    {
       text: "Medications / Allergies",
       type: "text",
       options: ["Skip"]
@@ -106,8 +149,10 @@ export default function Emergency() {
   const [responses, setResponses] = useState<string[]>([]);
   const [summary, setSummary] = useState('');
   const [flowActive, setFlowActive] = useState(false);
-  const recognitionRef = useRef<any>(null);
+
+  const recognitionRef = useRef<SpeechRecognitionDef | null>(null);
   const timerRef = useRef<number | null>(null);
+
   const [transcript, setTranscript] = useState('');
   const [manualAnswer, setManualAnswer] = useState('');
   const manualAnswerRef = useRef<string>('');
@@ -167,7 +212,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
 
   const speak = (text: string) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return Promise.resolve();
-    try { window.speechSynthesis.cancel(); } catch {}
+    try { window.speechSynthesis.cancel(); } catch (err) { /* ignore cancellation errors */ }
     return new Promise<void>((resolve) => {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US';
@@ -180,15 +225,18 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
   };
 
   const startRecognition = () => {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { recognitionRef.current = null; return null; }
-    const rec = new SR();
+    const SRConstructor = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!SRConstructor) { recognitionRef.current = null; return null; }
+
+    // Create recognition instance using our typed constructor
+    const rec = new SRConstructor() as SpeechRecognitionDef;
     rec.lang = 'en-US';
     rec.interimResults = true;
     rec.maxAlternatives = 1;
     setTranscript('');
     transcriptRef.current = '';
-    rec.onresult = (e: any) => {
+
+    rec.onresult = (e: SpeechRecognitionEventDef) => {
       let collected = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         collected += e.results[i][0].transcript + ' ';
@@ -197,8 +245,17 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
       setTranscript(collected);
       transcriptRef.current = collected;
     };
-    rec.onerror = () => {};
-    try { rec.start(); } catch {}
+
+    rec.onerror = () => {
+      // ignore recognition errors for now
+    };
+
+    try {
+      rec.start();
+    } catch (err) {
+      // ignore start errors (e.g., permission denied or already started)
+    }
+
     recognitionRef.current = rec;
     return rec;
   };
@@ -206,7 +263,13 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
   const stopRecognition = () => {
     const rec = recognitionRef.current;
     if (rec) {
-      try { rec.onresult = null; rec.onerror = null; rec.stop(); } catch {}
+      try {
+        rec.onresult = null;
+        rec.onerror = null;
+        rec.stop();
+      } catch (err) {
+        // ignore stop errors
+      }
     }
     recognitionRef.current = null;
   };
@@ -218,13 +281,13 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
     setTextInput('');
     setRadioValue('');
     setStatus('processing');
-    
+
     setResponses((prev) => {
       const normalized = answer ? answer : 'No response';
       const newRes = [...prev, normalized];
       const total = userType ? questions[userType].length : 0;
       if (newRes.length >= total) {
-        try { window.speechSynthesis?.cancel(); } catch {}
+        try { window.speechSynthesis?.cancel(); } catch (err) { /* ignore */ }
         generateSummary(newRes);
         setState('summary');
         setFlowActive(false);
@@ -263,7 +326,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
     return () => {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
       stopRecognition();
-      try { window.speechSynthesis?.cancel(); } catch {}
+      try { window.speechSynthesis?.cancel(); } catch (err) { /* ignore */ }
     };
   }, []);
 
@@ -301,7 +364,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
     setFlowActive(false);
     if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
     stopRecognition();
-    try { window.speechSynthesis?.cancel(); } catch {}
+    try { window.speechSynthesis?.cancel(); } catch (err) { /* ignore */ }
     setStatus('idle');
   };
 
@@ -327,8 +390,8 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
     }
   };
 
-  const currentQ = userType && currentQuestion < questions[userType].length 
-    ? questions[userType][currentQuestion] 
+  const currentQ = userType && currentQuestion < questions[userType].length
+    ? questions[userType][currentQuestion]
     : null;
 
   return (
@@ -346,11 +409,11 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                 <p className="text-muted-foreground">Voice-driven emergency questionnaire system</p>
               </div>
             </div>
-            
+
             {/* Alert Button - Top Right */}
             {state === 'selection' && (
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 size="lg"
                 onClick={() => {
                   emergencyContacts.forEach(contact => {
@@ -382,7 +445,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-6">
-                <Card 
+                <Card
                   className="cursor-pointer hover:shadow-primary transition-all duration-200 border-2 hover:border-primary/30"
                   onClick={() => handleUserTypeSelect('general')}
                 >
@@ -404,7 +467,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                   </CardContent>
                 </Card>
 
-                <Card 
+                <Card
                   className="cursor-pointer hover:shadow-primary transition-all duration-200 border-2 hover:border-primary/30"
                   onClick={() => handleUserTypeSelect('hospital')}
                 >
@@ -455,7 +518,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                     <div className="space-y-6">
                       {/* Progress Bar */}
                       <div className="w-full bg-muted rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
                           style={{ width: `${((currentQuestion + 1) / questions[userType].length) * 100}%` }}
                         ></div>
@@ -466,7 +529,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                         <h3 className="text-xl font-semibold text-foreground mb-4">
                           {currentQ.text}
                         </h3>
-                        
+
                         {/* Question Input Based on Type */}
                         {currentQ.type === 'text' && (
                           <Input
@@ -492,7 +555,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                             </div>
                           </RadioGroup>
                         )}
-                        
+
                         {/* Voice Status */}
                         <div className="mt-4 flex items-center space-x-2">
                           <div className={`w-2 h-2 rounded-full ${status === 'listening' ? 'bg-secondary animate-pulse' : status === 'asking' ? 'bg-primary' : 'bg-muted-foreground'}`}></div>
@@ -553,8 +616,8 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                       {/* Filtered Hospital List */}
                       <div className="space-y-2">
                         {dummyHospitals
-                          .filter(h => 
-                            hospitalSearch === '' || 
+                          .filter(h =>
+                            hospitalSearch === '' ||
                             h.name.toLowerCase().includes(hospitalSearch.toLowerCase())
                           )
                           .map((hospital) => (
@@ -594,7 +657,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                                 <div className="absolute left-16 top-0 w-1 h-full bg-gray-400"></div>
                                 <div className="absolute left-24 top-0 w-1 h-full bg-gray-400"></div>
                               </div>
-                              
+
                               {/* Hospital Pins */}
                               {dummyHospitals.map((hospital, idx) => (
                                 <div
@@ -614,13 +677,13 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                                   </div>
                                 </div>
                               ))}
-                              
+
                               {/* User Location */}
                               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                                 <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
                               </div>
                             </div>
-                            
+
                             <div className="mt-4 text-xs text-muted-foreground">
                               Click on hospital pins to select
                             </div>
@@ -653,7 +716,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                   <div className="space-y-6">
                     {/* Progress Bar */}
                     <div className="w-full bg-muted rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-gradient-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${((currentQuestion + 1) / questions[userType].length) * 100}%` }}
                       ></div>
@@ -664,7 +727,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                       <h3 className="text-xl font-semibold text-foreground mb-4">
                         {currentQ.text}
                       </h3>
-                      
+
                       {/* Question Input Based on Type */}
                       {currentQ.type === 'text' && (
                         <div className="space-y-4">
@@ -709,7 +772,7 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                           </div>
                         </RadioGroup>
                       )}
-                      
+
                       {/* Voice Status */}
                       <div className="mt-4 flex items-center space-x-2">
                         <div className={`w-2 h-2 rounded-full ${status === 'listening' ? 'bg-secondary animate-pulse' : status === 'asking' ? 'bg-primary' : 'bg-muted-foreground'}`}></div>
@@ -788,8 +851,8 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex items-center space-x-2"
                     onClick={() => {
                       if (!isReading) {
@@ -806,8 +869,8 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                     <span>Read Aloud</span>
                   </Button>
 
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex items-center space-x-2"
                     onClick={() => {
                       if (isReading) {
@@ -822,8 +885,8 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                     <span>Stop Reading</span>
                   </Button>
 
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex items-center space-x-2"
                     onClick={() => {
                       const blob = new Blob([summary], { type: 'text/plain' });
@@ -844,9 +907,9 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
                     <Download className="w-4 h-4" />
                     <span>Download PDF</span>
                   </Button>
-                  
-                  <Button 
-                    variant="outline" 
+
+                  <Button
+                    variant="outline"
                     className="flex items-center space-x-2"
                     onClick={() => {
                       toast({
@@ -862,8 +925,8 @@ Recommendation: Immediate emergency care required. Report has been sent to the h
 
                 {/* Reset Button */}
                 <div className="pt-4">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     onClick={resetQuestionnaire}
                     className="w-full"
                   >

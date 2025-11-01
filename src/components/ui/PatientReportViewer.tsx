@@ -46,7 +46,7 @@ const mockReports: PatientReport[] = [
     summary: 'Comprehensive health examination with blood work analysis. Patient shows good overall health with minor recommendations for lifestyle improvements.',
     details: {
       patientInfo: {
-        name: 'John Doe',
+        name: 'Anand Kumar',
         age: 45,
         gender: 'Male',
         id: 'P-2024-001'
@@ -81,7 +81,7 @@ const mockReports: PatientReport[] = [
     summary: 'Patient referred for chest pain evaluation. ECG and stress test performed with normal results. Recommended lifestyle modifications.',
     details: {
       patientInfo: {
-        name: 'John Doe',
+        name: 'Anand Kumar',
         age: 45,
         gender: 'Male',
         id: 'P-2024-001'
@@ -116,7 +116,7 @@ const mockReports: PatientReport[] = [
     summary: 'Comprehensive metabolic panel and lipid profile analysis. Most values within normal range with slightly elevated cholesterol.',
     details: {
       patientInfo: {
-        name: 'John Doe',
+        name: 'Anand Kumar',
         age: 45,
         gender: 'Male',
         id: 'P-2024-001'

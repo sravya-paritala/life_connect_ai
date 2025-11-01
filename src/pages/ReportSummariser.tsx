@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,8 @@ import { Separator } from '@/components/ui/separator';
 import { DataVisualization } from '@/components/ui/DataVisualization';
 import { FileText, Upload, Camera, Download, Share2, Volume2, Highlighter, Square, Play, Pause } from 'lucide-react';
 import ShareButton from '@/components/ui/ShareButton';
+
+import OCRUpload from "@/components/layout/OCRUpload";
 
 const supportedFormats = ['PDF', 'JPG', 'PNG', 'DOCX'];
 
@@ -21,17 +23,25 @@ export default function ReportSummariser() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  useEffect(() => {
+    if(videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
+
   // Dummy translations for all supported languages
-  const translations = {
-    Telugu: `**రోగి నివేదిక సారాంశం**\n\n**రోగి సమాచారం:** జాన్ డో, 45 సంవత్సరాలు, పురుషుడు\n\n**ప్రధాన కనుగొనబడిన అంశాలు:**\n• రక్తపోత్తు: 140/90 mmHg (అధికం)\n• గుండె వేగం: 82 bpm (సాధారణం)\n• రక్తంలో చక్కెర: 180 mg/dL (అధికం)`,
-    Hindi: `**मरीज़ रिपोर्ट सारांश**\n\n**मरीज़ की जानकारी:** जॉन डो, 45 वर्ष, पुरुष\n\n**मुख्य निष्कर्ष:**\n• रक्तचाप: 140/90 mmHg (उच्च)\n• हृदय गति: 82 bpm (सामान्य)\n• रक्त शर्करा: 180 mg/dL (उच्च)`,
-    Tamil: `**நோயாளர் அறிக்கை சுருக்கம்**\n\n**நோயாளர் தகவல்:** ஜான் டோ, 45 வயது, ஆண்\n\n**முக்கிய கண்டுபிடிப்புகள்:**\n• இரத்த அழுத்தம்: 140/90 mmHg (அதிகம்)\n• இதய துடிப்பு: 82 bpm (சாதாரணம்)`,
-    Malayalam: `**രോഗി റിപ്പോർട്ട് സംഗ്രഹം**\n\n**രോഗി വിവരങ്ങൾ:** ജോൺ ഡോ, 45 വയസ്സ്, പുരുഷൻ\n\n**പ്രധാന കണ്ടെത്തലുകൾ:**\n• രക്തസമ്മർദ്ദം: 140/90 mmHg (ഉയർന്നത്)\n• ഹൃദയമിടിപ്പ്: 82 bpm (സാധാരണം)`,
-    Kannada: `**ರೋಗಿಯ ವರದಿ ಸಾರಾಂಶ**\n\n**ರೋಗಿಯ ಮಾಹಿತಿ:** ಜಾನ್ ಡೋ, 45 ವರ್ಷ, ಪುರುಷ\n\n**ಮುಖ್ಯ ಸಂಶೋಧನೆಗಳು:**\n• ರಕ್ತದೊತ್ತಡ: 140/90 mmHg (ಅಧಿಕ)\n• ಹೃದಯ ಬಡಿತ: 82 bpm (ಸಾಮಾನ್ಯ)`,
-    Bengali: `**রোগীর রিপোর্ট সারসংক্ষেপ**\n\n**রোগীর তথ্য:** জন ডো, ৪৫ বছর, পুরুষ\n\n**প্রধান অনুসন্ধানসমূহ:**\n• রক্তচাপ: ১৪০/৯০ mmHg (উচ্চ)\n• হৃদস্পন্দন: ৮২ bpm (স্বাভাবিক)`,
-    Rajasthani: `**मरीज री रिपोर्ट सारांश**\n\n**मरीज री जानकारी:** जॉन डो, 45 साल, पुरुष\n\n**मुख्य बात:**\n• ब्लड प्रेशर: 140/90 mmHg (ज्यादा)\n• दिल री धड़कन: 82 bpm (सामान्य)`,
-    Marathi: `**रुग्ण अहवाल सारांश**\n\n**रुग्ण माहिती:** जॉन डो, ४५ वर्षे, पुरुष\n\n**मुख्य निष्कर्ष:**\n• रक्तदाब: १४०/९० mmHg (जास्त)\n• हृदयाचे ठोके: ८२ bpm (सामान्य)`
-  };
+  const translations = { 
+    Telugu: `రోగి నివేదిక సారాంశం\n\nరోగి సమాచారం: జాన్ డో, 45 సంవత్సరాలు, పురుషుడు\n\nప్రధాన కనుగొనబడిన అంశాలు:\n• రక్తపోత్తు: 140/90 mmHg (అధికం)\n• గుండె వేగం: 82 bpm (సాధారణం)\n• రక్తంలో చక్కెర: 180 mg/dL (అధికం)`,
+    Hindi: `मरीज़ रिपोर्ट सारांश\n\nमरीज़ की जानकारी: जॉन डो, 45 वर्ष, पुरुष\n\nमुख्य निष्कर्ष:\n• रक्तचाप: 140/90 mmHg (उच्च)\n• हृदय गति: 82 bpm (सामान्य)\n• रक्त शर्करा: 180 mg/dL (उच्च)`,
+    Tamil: `நோயாளர் அறிக்கை சுருக்கம்\n\nநோயாளர் தகவல்: ஜான் டோ, 45 வயது, ஆண்\n\nமுக்கிய கண்டுபிடிப்புகள்:\n• இரத்த அழுத்தம்: 140/90 mmHg (அதிகம்)\n• இதய துடிப்பு: 82 bpm (சாதாரணம்)`,
+    Malayalam: `രോഗി റിപ്പോർട്ട് സംഗ്രഹം\n\nരോഗി വിവരങ്ങൾ: ജോൺ ഡോ, 45 വയസ്സ്, പുരുഷൻ\n\nപ്രധാന കണ്ടെത്തലുകൾ:\n• രക്തസമ്മർദ്ദം: 140/90 mmHg (ഉയർന്നത്)\n• ഹൃദയമിടിപ്പ്: 82 bpm (സാധാരണം)`,
+    Kannada: `ರೋಗಿಯ ವರದಿ ಸಾರಾಂಶ\n\nರೋಗಿಯ ಮಾಹಿತಿ: ಜಾನ್ ಡೋ, 45 ವರ್ಷ, ಪುರುಷ\n\nಮುಖ್ಯ ಸಂಶೋಧನೆಗಳು:\n• ರಕ್ತದೊತ್ತಡ: 140/90 mmHg (ಅಧಿಕ)\n• ಹೃದಯ ಬಡಿತ: 82 bpm (ಸಾಮಾನ್ಯ)`,
+    Bengali: `রোগীর রিপোর্ট সারসংক্ষেপ\n\nরোগীর তথ্য: জন ডো, ৪৫ বছর, পুরুষ\n\nপ্রধান অনুসন্ধানসমূহ:\n• রক্তচাপ: ১৪০/৯০ mmHg (উচ্চ)\n• হৃদস্পন্দন: ৮২ bpm (স্বাভাবিক)`,
+    Rajasthani: `मरीज री रिपोर्ट सारांश\n\nमरीज री जानकारी: जॉन डो, 45 साल, पुरुष\n\nमुख्य बात:\n• ब्लड प्रेशर: 140/90 mmHg (ज्यादा)\n• दिल री धड़कन: 82 bpm (सामान्य)`,
+    Marathi: `रुग्ण अहवाल सारांश\n\nरुग्ण माहिती: जॉन डो, ४५ वर्षे, पुरुष\n\nमुख्य निष्कर्ष:\n• रक्तदाब: १४०/९० mmHg (जास्त)\n• हृदयाचे ठोके: ८२ bpm (सामान्य)`
+};
+
 
   const handleTranslate = (language: string) => {
     if (language === 'English') {
@@ -52,11 +62,11 @@ export default function ReportSummariser() {
       } else {
         // Start reading
         const utterance = new SpeechSynthesisUtterance(currentText || summary);
-        
+
         // Set language-specific voice
         const voices = window.speechSynthesis.getVoices();
         let preferredVoice = null;
-        
+
         const langMap: { [key: string]: string } = {
           'Telugu': 'te-IN',
           'Hindi': 'hi-IN',
@@ -67,34 +77,39 @@ export default function ReportSummariser() {
           'Rajasthani': 'hi-IN',
           'Marathi': 'mr-IN'
         };
-        
+
         utterance.lang = langMap[currentLanguage] || 'en-US';
-        
+
         if (currentLanguage !== 'English') {
-          preferredVoice = voices.find(voice => 
-            voice.lang.includes(utterance.lang.split('-')[0]) || 
+          preferredVoice = voices.find(voice =>
+            voice.lang.includes(utterance.lang.split('-')[0]) ||
             voice.lang.includes('hi-IN')
           );
         } else {
           preferredVoice = voices.find(voice => voice.lang.includes('en'));
         }
-        
+
         if (preferredVoice) {
           utterance.voice = preferredVoice;
         }
-        
+
         utterance.rate = 0.8;
         utterance.pitch = 1;
         utterance.volume = 1;
-        
+
         utterance.onend = () => {
           setIsReading(false);
           setSpeechUtterance(null);
         };
-        
+
         setSpeechUtterance(utterance);
         setIsReading(true);
         window.speechSynthesis.speak(utterance);
+        return (
+          <div className="p-6 min-h-screen bg-background">
+            <OCRUpload />
+          </div>
+        );
       }
     } else {
       console.log('Speech synthesis not supported');
@@ -103,33 +118,39 @@ export default function ReportSummariser() {
 
   const handleScanDocument = async () => {
     try {
+      // Request new camera stream
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setCameraStream(stream);
       setIsCameraOpen(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
     } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Unable to access camera. Please check permissions.');
+      console.error("Error accessing camera:", error);
+      alert("Unable to access camera. Please check permissions.");
     }
   };
 
   const handleCaptureDocument = () => {
-    if (videoRef.current) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      setIsCameraOpen(false);
-      
-      // Simulate processing
-      setIsProcessing(true);
-      setTimeout(() => {
-        const defaultSummary = `**Patient Report Summary**\n\n**Patient Information:** John Doe, 45 years old, Male\n\n**Key Findings:**\n• Blood pressure: 140/90 mmHg (elevated)\n• Heart rate: 82 bpm (normal)\n• Blood glucose: 180 mg/dL (high)\n• Cholesterol: 245 mg/dL (borderline high)\n\n**Diagnosis:** Hypertension with diabetes mellitus type 2\n\n**Recommendations:**\n• Start antihypertensive medication\n• Begin diabetes management protocol\n• Lifestyle modifications recommended\n• Follow-up in 2 weeks\n\n**Priority Level:** Medium - requires ongoing monitoring and treatment adjustments.`;
-        setSummary(defaultSummary);
-        setCurrentText(defaultSummary);
-        setCurrentLanguage('English');
-        setIsProcessing(false);
-      }, 3000);
-    }
+    if (!videoRef.current) return;
+
+    const stream = videoRef.current.srcObject as MediaStream | null;
+    if (!stream) {
+      console.warn('No video stream available for capture');
+      return;
+    };
+
+    // Safely stop the stream
+    stream.getTracks().forEach(track => track.stop());
+    videoRef.current.srcObject = null;
+    setIsCameraOpen(false);
+
+    // Simulate processing
+    setIsProcessing(true);
+    setTimeout(() => {
+      const defaultSummary = `Patient Report Summary\n\nPatient Information: "Anand Kumar", 45 years old, Male\n\nKey Findings:\n• Blood pressure: 140/90 mmHg (elevated)\n• Heart rate: 82 bpm (normal)\n• Blood glucose: 180 mg/dL (high)\n• Cholesterol: 245 mg/dL (borderline high)\n\nDiagnosis: Hypertension with diabetes mellitus type 2\n\nRecommendations:\n• Start antihypertensive medication\n• Begin diabetes management protocol\n• Lifestyle modifications recommended\n• Follow-up in 2 weeks\n\nPriority Level: Medium - requires ongoing monitoring and treatment adjustments.`;
+      setSummary(defaultSummary);
+      setCurrentText(defaultSummary);
+      setCurrentLanguage('English');
+      setIsProcessing(false);
+    }, 3000);
   };
 
   const handleHighlight = () => {
@@ -152,29 +173,29 @@ export default function ReportSummariser() {
     if (file) {
       setUploadedFile(file);
       setIsProcessing(true);
-      
+
       // Simulate AI processing
       setTimeout(() => {
         const defaultSummary = `
-**Patient Report Summary**
+Patient Report Summary
 
-**Patient Information:** John Doe, 45 years old, Male
+Patient Information: Anand Kumar, 45 years old, Male
 
-**Key Findings:**
+Key Findings:
 • Blood pressure: 140/90 mmHg (elevated)
 • Heart rate: 82 bpm (normal)
 • Blood glucose: 180 mg/dL (high)
 • Cholesterol: 245 mg/dL (borderline high)
 
-**Diagnosis:** Hypertension with diabetes mellitus type 2
+Diagnosis: Hypertension with diabetes mellitus type 2
 
-**Recommendations:**
+Recommendations:
 • Start antihypertensive medication
 • Begin diabetes management protocol
 • Lifestyle modifications recommended
 • Follow-up in 2 weeks
 
-**Priority Level:** Medium - requires ongoing monitoring and treatment adjustments.
+Priority Level: Medium - requires ongoing monitoring and treatment adjustments.
         `;
         setSummary(defaultSummary);
         setCurrentText(defaultSummary);
@@ -344,8 +365,8 @@ export default function ReportSummariser() {
                 <div className="bg-gradient-card p-4 rounded-lg border border-border">
                   <h4 className="font-semibold text-foreground mb-2">Overview</h4>
                   <div className="text-sm text-muted-foreground">
-                    <strong>Patient:</strong> John Doe, 45 years, Male<br/>
-                    <strong>Risk Level:</strong> Medium<br/>
+                    <strong>Patient:</strong> Anand Kumar, 45 years, Male<br />
+                    <strong>Risk Level:</strong> Medium<br />
                     <strong>Key Issues:</strong> Hypertension, Diabetes Type 2
                   </div>
                 </div>
@@ -353,10 +374,9 @@ export default function ReportSummariser() {
                 {/* Detailed Summary Content */}
                 <div className="bg-gradient-card p-6 rounded-lg border border-border">
                   <h4 className="font-semibold text-foreground mb-3">Detailed Summary</h4>
-                  <pre 
-                    className={`whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed ${
-                      isHighlighted ? 'highlight-key-points' : ''
-                    }`}
+                  <pre
+                    className={`whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed ${isHighlighted ? 'highlight-key-points' : ''
+                      }`}
                     style={isHighlighted ? {
                       background: 'linear-gradient(120deg, transparent 0%, rgba(255, 255, 0, 0.3) 20%, rgba(255, 255, 0, 0.3) 80%, transparent 100%)'
                     } : {}}
@@ -371,27 +391,27 @@ export default function ReportSummariser() {
                     title="Medical Report Summary"
                     text={currentText || summary}
                   />
-                  
-                  <Button 
-                    variant="outline" 
+
+                  <Button
+                    variant="outline"
                     className="flex items-center space-x-2"
                     onClick={handleDownloadPDF}
                   >
                     <Download className="w-4 h-4" />
                     <span>Download PDF</span>
                   </Button>
-                  
-                  <Button 
-                    variant="outline" 
+
+                  <Button
+                    variant="outline"
                     className="flex items-center space-x-2"
                     onClick={handleHighlight}
                   >
                     <Highlighter className="w-4 h-4" />
                     <span>{isHighlighted ? 'Remove Highlight' : 'Highlight'}</span>
                   </Button>
-                  
-                  <Button 
-                    variant="outline" 
+
+                  <Button
+                    variant="outline"
                     className="flex items-center space-x-2"
                     onClick={handleReadAloud}
                   >
@@ -404,14 +424,13 @@ export default function ReportSummariser() {
                 <div className="flex flex-wrap gap-2">
                   <span className="text-sm text-muted-foreground">Available languages:</span>
                   {['English', 'Telugu', 'Hindi', 'Tamil', 'Malayalam', 'Kannada', 'Bengali', 'Rajasthani', 'Marathi'].map((lang) => (
-                    <Badge 
-                      key={lang} 
-                      variant={currentLanguage === lang ? "default" : "outline"} 
-                      className={`cursor-pointer transition-colors ${
-                        currentLanguage === lang 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'hover:bg-accent/10'
-                      }`}
+                    <Badge
+                      key={lang}
+                      variant={currentLanguage === lang ? "default" : "outline"}
+                      className={`cursor-pointer transition-colors ${currentLanguage === lang
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-accent/10'
+                        }`}
                       onClick={() => handleTranslate(lang)}
                     >
                       {lang}
